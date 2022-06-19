@@ -32,9 +32,10 @@ type HaDevice struct {
 
 func (d *HaDevice) SetState(newState string) {
 	d.State = newState
+	d.lastValue = time.Now()
 	d.PublishAvailability()
 	d.PublishState()
-	d.lastValue = time.Now()
+
 }
 
 func (d *HaDevice) PublishState() {
@@ -48,7 +49,7 @@ func (d *HaDevice) PublishState() {
 
 func (d *HaDevice) PublishAvailability() {
 	available := "0"
-	if time.Since(d.lastValue) < 60*time.Second {
+	if time.Since(d.lastValue) < time.Duration(60*time.Second) {
 		available = "1"
 	}
 	token := ha.Mqtt.Publish(d.AvailabilityTopic, byte(0), false, available)
@@ -175,7 +176,7 @@ func (d GwDevices) StartDiscoveryPublishing(ctx context.Context) {
 	go func() {
 		for {
 			for _, device := range d {
-				if time.Since(device.lastDiscovery) > 3600*time.Second {
+				if time.Since(device.lastDiscovery) > time.Duration(3600*time.Second) {
 					device.PublishDiscovery()
 				}
 			}
