@@ -1,8 +1,8 @@
 Mqtt:
-  host: 127.0.0.1
-  port: 8080
-  username: mqtt
-  password: mqtt
+  Host: 127.0.0.1
+  Port: 8080
+  Username: mqtt
+  Password: mqtt
 Healthbox:
-  host: 127.0.0.1
-  port: 8080
+  Host: 127.0.0.1
+  Port: 8080

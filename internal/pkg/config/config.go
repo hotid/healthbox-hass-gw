@@ -7,16 +7,16 @@ import (
 
 type Config struct {
 	Mqtt struct {
-		Host            string `yaml:"host"`
-		Port            string `yaml:"port"`
-		Username        string `yaml:"username"`
-		Password        string `yaml:"password"`
-		DiscoveryPrefix string `yaml:"discoveryPrefix"`
-	} `yaml:"server"`
+		Host            string `yaml:"Host"`
+		Port            string `yaml:"Port"`
+		Username        string `yaml:"Username"`
+		Password        string `yaml:"Password"`
+		DiscoveryPrefix string `yaml:"DiscoveryPrefix"`
+	} `yaml:"Mqtt"`
 	Healthbox struct {
 		Host string `yaml:"host"`
 		Port string `yaml:"port"`
-	} `yaml:"healthbox"`
+	} `yaml:"Healthbox"`
 }
 
 func NewConfig(configPath string) (*Config, error) {
