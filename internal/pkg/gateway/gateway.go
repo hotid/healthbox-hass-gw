@@ -58,6 +58,34 @@ func (d *HaDevice) PublishAvailability() {
 	}
 }
 
+func (d *HaDevice) PublishDiscovery() {
+	payload := homeassistant.HaDeviceDiscoveryInfo{
+		UniqueId:            d.UniqueId,
+		ObjectId:            d.UniqueId,
+		Name:                d.Name,
+		PayloadAvailable:    "1",
+		PayloadNotAvailable: "0",
+		AvailabilityTopic:   d.AvailabilityTopic,
+		StateTopic:          d.StateTopic,
+		UnitOfMeasurement:   d.Unit,
+	}
+	payload.Device.Name = d.DeviceName
+	payload.Device.Identifiers = "healthbox"
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		log.Printf("error marshalling payload: %s", err)
+		return
+	}
+	topic := fmt.Sprintf("homeassistant/sensor/%s/%s/config", "healthbox", d.UniqueId)
+	log.Printf("publishing discivery data for device %s: %s %+v", d.Name, topic, string(jsonPayload))
+	token := ha.Mqtt.Publish(topic, byte(0), false, jsonPayload)
+	token.Wait()
+	if token.Error() != nil {
+		panic(token.Error())
+	}
+	d.lastDiscovery = time.Now()
+}
+
 func (d GwDevices) String() string {
 	var devicesStr string
 	keys := make([]string, 0, len(d))
@@ -100,8 +128,10 @@ func newHaDevice(room healthbox.RoomInfo) HaDevice {
 		Unit:              room.Actuator[0].Parameter.FlowRate.Unit,
 		AvailabilityTopic: fmt.Sprintf("%s/devices/controls/%s/availability", "healthbox", deviceId),
 		StateTopic:        fmt.Sprintf("%s/devices/controls/%s", "healthbox", deviceId),
+		lastValue:         time.Now(),
+		lastDiscovery:     time.Now(),
 	}
-
+	device.PublishDiscovery()
 	return device
 }
 
@@ -144,33 +174,9 @@ func (d GwDevices) StartGateway(ctx context.Context, c *healthbox.Client, h *hom
 func (d GwDevices) StartDiscoveryPublishing(ctx context.Context) {
 	go func() {
 		for {
-			for id, device := range d {
+			for _, device := range d {
 				if time.Since(device.lastDiscovery) > 3600*time.Second {
-					payload := homeassistant.HaDeviceDiscoveryInfo{
-						UniqueId:            id,
-						ObjectId:            id,
-						Name:                device.Name,
-						PayloadAvailable:    "1",
-						PayloadNotAvailable: "0",
-						AvailabilityTopic:   device.AvailabilityTopic,
-						StateTopic:          device.StateTopic,
-						UnitOfMeasurement:   device.Unit,
-					}
-					payload.Device.Name = device.DeviceName
-					payload.Device.Identifiers = "healthbox"
-					jsonPayload, err := json.Marshal(payload)
-					if err != nil {
-						log.Printf("error marshalling payload: %s", err)
-						continue
-					}
-					topic := fmt.Sprintf("homeassistant/sensor/%s/%s/config", "healthbox", id)
-					log.Printf("publishing discivery data for device %s: %s %+v", device.Name, topic, string(jsonPayload))
-					token := ha.Mqtt.Publish(topic, byte(0), false, jsonPayload)
-					token.Wait()
-					if token.Error() != nil {
-						panic(token.Error())
-					}
-					device.lastDiscovery = time.Now()
+					device.PublishDiscovery()
 				}
 			}
 			select {
