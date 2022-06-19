@@ -14,8 +14,8 @@ type Config struct {
 		DiscoveryPrefix string `yaml:"DiscoveryPrefix"`
 	} `yaml:"Mqtt"`
 	Healthbox struct {
-		Host string `yaml:"host"`
-		Port string `yaml:"port"`
+		Host string `yaml:"Host"`
+		Port string `yaml:"Port"`
 	} `yaml:"Healthbox"`
 }
 
