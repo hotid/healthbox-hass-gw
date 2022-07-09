@@ -12,12 +12,22 @@ with [MQTT discovery](https://www.home-assistant.io/docs/mqtt/discovery).
 ### Requirements
 
 * Go
+* Healthbox 3.0 & HomeAssistant ;)
 
-### Installing:
+### Installing as a service:
+
+* Create configuration file (/etc/healthbox-hass-gw/healthbox-hass-gw.yaml by default)
+* Create systemd unit file (/etc/systemd/system/healthbox-hass-gw.service)
 
 ```shell script
 go install github.com/hotid/healthbox-hass-gw/cmd/healthbox-hass-gw
+cp ~/go/bin/healthbox-hass-gw /usr/local/bin
+systemctl daemon-reload
+systemctl start healthbox-hass-gw
 ```
+
+Observe syslog for errors and messages.
+
 ### Configuring healthbox-hass-gw
 
 ```yaml
@@ -37,3 +47,18 @@ Healthbox:
 ## Supported controls:
 * Per room boost control
 
+## Example systemd unit file
+```unit file (systemd)
+[Unit]
+Description="Healthbox to HomeAssistant mqtt gateway"
+
+[Service]
+User=nobody
+Group=nogroup
+ExecStart=/usr/local/bin/healthbox-hass-gw
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```

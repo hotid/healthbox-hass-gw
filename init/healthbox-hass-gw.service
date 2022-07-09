@@ -1,0 +1,12 @@
+[Unit]
+Description="Healthbox to HomeAssistant mqtt gateway"
+
+[Service]
+User=nobody
+Group=nogroup
+ExecStart=/usr/local/bin/healthbox-hass-gw
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
