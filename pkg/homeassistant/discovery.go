@@ -16,6 +16,7 @@ type HaCommonDiscoveryInfo struct {
 type HaSensorDiscoveryInfo struct {
 	HaCommonDiscoveryInfo
 	UnitOfMeasurement string `json:"unit_of_measurement"`
+	StateClass        string `json:"state_class"`
 }
 
 type HaSwitchDiscoveryInfo struct {

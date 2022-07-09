@@ -79,6 +79,7 @@ func (d *HaDevice) PublishFlowSensorDiscovery() {
 			StateTopic:          d.GetSensorStateTopic(),
 		},
 		UnitOfMeasurement: d.Unit,
+		StateClass:        "measurement",
 	}
 	discoveryInfo.Device.Name = "Healthbox"
 	discoveryInfo.Device.Identifiers = "healthbox"
