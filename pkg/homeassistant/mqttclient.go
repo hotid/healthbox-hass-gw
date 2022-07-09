@@ -4,7 +4,6 @@ import (
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/hotid/healthbox-hass-gw/internal/pkg/config"
-	"log"
 	"time"
 )
 
@@ -27,7 +26,7 @@ func NewClient(config *config.Config) *Client {
 
 	mqttClient := mqtt.NewClient(opts)
 	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
-		log.Panic(token.Error())
+		panic(token.Error())
 	}
 
 	c := &Client{Mqtt: mqttClient}
@@ -41,4 +40,12 @@ func (c *Client) SetDiscoveryPrefix(topic string) {
 
 func (c *Client) GetDiscoveryPrefix() string {
 	return c.discoveryPrefix
+}
+
+func (c *Client) Publish(topic string, payload interface{}) {
+	token := c.Mqtt.Publish(topic, byte(0), false, payload)
+	token.Wait()
+	if token.Error() != nil {
+		panic(token.Error())
+	}
 }

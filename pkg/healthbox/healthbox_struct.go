@@ -113,3 +113,12 @@ type SensorInfo struct {
 		} `json:"room"`
 	} `json:"parameter"`
 }
+
+type BoostInfo struct {
+	DefaultLevel   float64 `json:"default_level,omitempty"`
+	DefaultTimeout int     `json:"default_timeout,omitempty"`
+	Enable         bool    `json:"enable"`
+	Level          float64 `json:"level"`
+	Remaining      int     `json:"remaining,omitempty"`
+	Timeout        int     `json:"timeout"`
+}

@@ -2,26 +2,26 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/hotid/healthbox-hass-gw/internal/pkg/config"
 	"github.com/hotid/healthbox-hass-gw/internal/pkg/gateway"
 	"github.com/hotid/healthbox-hass-gw/internal/pkg/utils"
 	"github.com/hotid/healthbox-hass-gw/pkg/healthbox"
 	"github.com/hotid/healthbox-hass-gw/pkg/homeassistant"
-	"log"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
-	config, err := config.NewConfig("/etc/healthbox-hass-gw/healthbox-hass-gw.yaml")
+	cfg, err := config.NewConfig("healthbox-hass-gw.yaml")
 	if err != nil {
-		log.Panic(err)
+		panic(fmt.Sprintf("Error reading configuration file: %s", err))
 	}
 	var devices gateway.GwDevices
-	devices = make(map[string]gateway.HaDevice)
+	devices = make(map[string]*gateway.HaDevice)
 
-	hbClient := healthbox.NewClient(config)
-	mqttClient := homeassistant.NewClient(config)
-	devices.StartGateway(ctx, hbClient, mqttClient)
+	healthboxClient := healthbox.NewClient(cfg)
+	mqttClient := homeassistant.NewClient(cfg)
+	devices.StartGateway(ctx, healthboxClient, mqttClient)
 
 	utils.HandleSignals(cancel)
 	utils.WaitCancel(ctx)
