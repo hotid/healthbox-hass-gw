@@ -60,7 +60,7 @@ func (d *HaDevice) PublishSwitchState() {
 
 func (d *HaDevice) PublishAvailability() {
 	available := "0"
-	if time.Since(d.lastValue) < time.Duration(60*time.Second) {
+	if time.Since(d.lastValue) < 60*time.Second {
 		available = "1"
 	}
 	ha.Publish(d.GetSensorAvailabilityTopic(), available)
@@ -230,7 +230,7 @@ func (d GwDevices) StartDiscoveryPublishing(ctx context.Context) {
 	go func() {
 		for {
 			for _, device := range d {
-				if time.Since(device.lastDiscovery) > time.Duration(3600*time.Second) {
+				if time.Since(device.lastDiscovery) > 3600*time.Second {
 					device.PublishFlowSensorDiscovery()
 				}
 			}
