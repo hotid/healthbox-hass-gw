@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"github.com/hotid/healthbox-hass-gw/internal/pkg/config"
 	"github.com/hotid/healthbox-hass-gw/internal/pkg/gateway"
@@ -12,7 +13,10 @@ import (
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
-	cfg, err := config.NewConfig("healthbox-hass-gw.yaml")
+	cfgPath := flag.String("config", "/etc/healthbox-hass-gw/healthbox-hass-gw.yaml", "config file location")
+	flag.Parse()
+
+	cfg, err := config.NewConfig(*cfgPath)
 	if err != nil {
 		panic(fmt.Sprintf("Error reading configuration file: %s", err))
 	}
