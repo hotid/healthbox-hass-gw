@@ -7,11 +7,14 @@ import (
 
 type Config struct {
 	Mqtt struct {
-		Host            string `yaml:"Host"`
-		Port            string `yaml:"Port"`
-		Username        string `yaml:"Username"`
-		Password        string `yaml:"Password"`
-		DiscoveryPrefix string `yaml:"DiscoveryPrefix"`
+		Host                 string `yaml:"Host"`
+		Port                 string `yaml:"Port"`
+		Username             string `yaml:"Username"`
+		Password             string `yaml:"Password"`
+		DiscoveryPrefix      string `yaml:"DiscoveryPrefix"`
+		StatusTopic          string `yaml:"StatusTopic"`
+		StatusPayloadOnline  string `yaml:"StatusPayloadOnline"`
+		StatusPayloadOffline string `yaml:"StatusPayloadOffline"`
 	} `yaml:"Mqtt"`
 	Healthbox struct {
 		Host string `yaml:"Host"`

@@ -36,6 +36,9 @@ Mqtt:
   Port: [YOUR MQTT BROKER PORT]
   Username: [YOUR MQTT USERNAME]
   Password: [YOUR MQTT PASSWORD]
+  StatusTopic: 'hass/status'
+  StatusPayloadOnline: 'online'
+  StatusPayloadOffline: 'offline'
 Healthbox:
   Host: [YOUR HEALTHBOX HOST]
   Port: 8080

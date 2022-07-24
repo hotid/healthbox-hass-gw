@@ -3,6 +3,9 @@ Mqtt:
   Port: 8080
   Username: mqtt
   Password: mqtt
+  StatusTopic: 'hass/status'
+  StatusPayloadOnline: 'online'
+  StatusPayloadOffline: 'offline'
 Healthbox:
   Host: 127.0.0.1
   Port: 8080

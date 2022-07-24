@@ -10,7 +10,34 @@ import (
 type Client struct {
 	Mqtt            mqtt.Client
 	discoveryPrefix string
+	payloadOnline   string
+	payloadOffline  string
 	component       string
+	statusTopic     string
+}
+
+func (c *Client) PayloadOnline() string {
+	return c.payloadOnline
+}
+
+func (c *Client) SetPayloadOnline(payloadOnline string) {
+	c.payloadOnline = payloadOnline
+}
+
+func (c *Client) PayloadOffline() string {
+	return c.payloadOffline
+}
+
+func (c *Client) SetPayloadOffline(payloadOffline string) {
+	c.payloadOffline = payloadOffline
+}
+
+func (c *Client) StatusTopic() string {
+	return c.statusTopic
+}
+
+func (c *Client) SetStatusTopic(statusTopic string) {
+	c.statusTopic = statusTopic
 }
 
 //topic = self._discovery_prefix + '/' + component + '/' + node_id + '/' + object_id + '/config'
@@ -31,6 +58,10 @@ func NewClient(config *config.Config) *Client {
 
 	c := &Client{Mqtt: mqttClient}
 	c.SetDiscoveryPrefix(config.Mqtt.DiscoveryPrefix)
+	c.SetPayloadOnline(config.Mqtt.StatusPayloadOnline)
+	c.SetPayloadOffline(config.Mqtt.StatusPayloadOffline)
+	c.SetStatusTopic(config.Mqtt.StatusTopic)
+
 	return c
 }
 

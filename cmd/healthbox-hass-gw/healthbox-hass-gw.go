@@ -20,12 +20,11 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Error reading configuration file: %s", err))
 	}
-	var devices gateway.GwDevices
-	devices = make(map[string]*gateway.HaDevice)
+	var gw gateway.Gw
 
 	healthboxClient := healthbox.NewClient(cfg)
 	mqttClient := homeassistant.NewClient(cfg)
-	devices.StartGateway(ctx, healthboxClient, mqttClient)
+	go gw.StartGateway(ctx, healthboxClient, mqttClient)
 
 	utils.HandleSignals(cancel)
 	utils.WaitCancel(ctx)
