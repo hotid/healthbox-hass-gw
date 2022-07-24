@@ -48,20 +48,14 @@ func (c *Client) GetCurrentData() (*CurrentData, error) {
 	return &currentData, nil
 }
 
-func (c *Client) GetBoostInfo(currentData *CurrentData) (*map[int]BoostInfo, error) {
-	currentBoostInfo := make(map[int]BoostInfo)
-
-	for _, room := range currentData.Room {
-		body, err := c.getData(fmt.Sprintf("/v1/api/boost/%d", room.Id))
-		boostInfo := BoostInfo{}
-		err = json.Unmarshal(body, &boostInfo)
-		if err != nil {
-			return nil, err
-		}
-		currentBoostInfo[room.Id] = boostInfo
-		time.Sleep(1 * time.Second)
+func (c *Client) GetBoostInfo(roomId int) (*BoostInfo, error) {
+	body, err := c.getData(fmt.Sprintf("/v1/api/boost/%d", roomId))
+	boostInfo := BoostInfo{}
+	err = json.Unmarshal(body, &boostInfo)
+	if err != nil {
+		return nil, err
 	}
-	return &currentBoostInfo, nil
+	return &boostInfo, nil
 }
 
 func (c *Client) Put(endpoint string, payload []byte) error {

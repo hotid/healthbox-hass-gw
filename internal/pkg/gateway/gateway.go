@@ -29,6 +29,7 @@ type HaDevice struct {
 	Boost           healthbox.BoostInfo
 	lastDiscovery   time.Time
 	lastValue       time.Time
+	lastBoostUpdate time.Time
 }
 
 func (d GwDevices) StartGateway(ctx context.Context, healthboxClient *healthbox.Client, mqttClient *homeassistant.Client) {
@@ -153,11 +154,19 @@ func (d GwDevices) UpdateCurrentData(currentData *healthbox.CurrentData) {
 	}
 }
 
-func (d GwDevices) UpdateBoostStatus(boostInfo map[int]healthbox.BoostInfo) {
+func (d GwDevices) UpdateRoomsBoostStatus() {
 	for _, room := range d {
-		if roomBoostInfo, ok := boostInfo[room.HealthboxRoomId]; ok {
-			room.Boost = roomBoostInfo
+		if time.Since(room.lastBoostUpdate) < 5*time.Second {
+			continue
 		}
+
+		boostInfo, err := c.GetBoostInfo(room.HealthboxRoomId)
+		if err != nil {
+			continue
+		}
+
+		room.Boost = *boostInfo
+		room.lastBoostUpdate = time.Now()
 	}
 }
 
@@ -199,7 +208,6 @@ func getUniqueSwitchId(room healthbox.RoomInfo) string {
 func (d GwDevices) StartDataUpdate(ctx context.Context, c *healthbox.Client) {
 	go func() {
 		for {
-			var boostInfo *map[int]healthbox.BoostInfo
 			currentData, err := c.GetCurrentData()
 			if err != nil {
 				fmt.Printf("error getting current data: %s", err)
@@ -207,13 +215,7 @@ func (d GwDevices) StartDataUpdate(ctx context.Context, c *healthbox.Client) {
 			}
 
 			d.UpdateCurrentData(currentData)
-			boostInfo, err = c.GetBoostInfo(currentData)
-			if err != nil {
-				fmt.Printf("error getting boost info: %s", err)
-				goto NextCycle
-			}
-
-			d.UpdateBoostStatus(*boostInfo)
+			d.UpdateRoomsBoostStatus()
 			fmt.Printf("%s", d)
 
 		NextCycle:
@@ -221,7 +223,7 @@ func (d GwDevices) StartDataUpdate(ctx context.Context, c *healthbox.Client) {
 			case <-ctx.Done():
 				return
 			default:
-				time.Sleep(time.Second * 1)
+				time.Sleep(time.Second * 15)
 			}
 		}
 	}()
@@ -283,9 +285,12 @@ func (d *HaDevice) mqttSwitchCallback(client mqtt.Client, message mqtt.Message) 
 
 }
 
-func (d *HaDevice) SetBoost(enabled bool) {
+func (d *HaDevice) SetBoost(newBoostState bool) {
+	if d.Boost.Enable == newBoostState {
+		return
+	}
 
-	boostCommand := healthbox.BoostInfo{Enable: enabled, Level: 200, Timeout: 3600}
+	boostCommand := healthbox.BoostInfo{Enable: newBoostState, Level: 200, Timeout: 3600}
 
 	payload, err := json.Marshal(boostCommand)
 	if err != nil {
@@ -296,7 +301,17 @@ func (d *HaDevice) SetBoost(enabled bool) {
 	if err != nil {
 		fmt.Printf("error setting boost level: %s", err)
 	}
-	d.Boost.Enable = enabled
+
+	time.Sleep(100 * time.Millisecond)
+
+	boostInfo, err := c.GetBoostInfo(d.HealthboxRoomId)
+	if err != nil {
+		return
+	}
+
+	d.Boost = *boostInfo
+	d.lastBoostUpdate = time.Now()
+
 	d.PublishState()
 }
 
