@@ -15,7 +15,7 @@ import (
 
 type Gw struct {
 	devices map[string]*HaDevice
-	state   bool
+	running bool
 	ctx     context.Context
 	cancel  context.CancelFunc
 }
@@ -56,16 +56,24 @@ func (g *Gw) StartGateway(ctx context.Context, healthboxClient *healthbox.Client
 }
 
 func (g *Gw) Start() {
+	if g.running == true {
+		return
+	}
 	fmt.Println("starting gateway")
 	g.ctx, g.cancel = context.WithCancel(context.Background())
 	g.StartDataUpdate(g.ctx)
 	g.resetDiscoveryInterval()
 	g.StartDiscoveryPublishing(g.ctx)
+	g.running = true
 }
 
 func (g *Gw) Stop() {
+	if g.running == false {
+		return
+	}
 	fmt.Println("stopping gateway")
 	g.cancel()
+	g.running = false
 }
 
 func (d *HaDevice) SetState(newState string) {
