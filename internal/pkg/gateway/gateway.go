@@ -278,6 +278,7 @@ func (g *Gw) StartDiscoveryPublishing(ctx context.Context) {
 			for _, device := range g.devices {
 				if time.Since(device.lastDiscovery) > 3600*time.Second {
 					device.PublishFlowSensorDiscovery()
+					device.PublishBoostSwitchDiscovery()
 				}
 			}
 			select {
