@@ -24,17 +24,18 @@ var ha *homeassistant.Client
 var c *healthbox.Client
 
 type HaDevice struct {
-	HealthboxRoomId int
-	Name            string
-	SensorUniqueId  string
-	SwitchUniqueId  string
-	Identifiers     string
-	State           string
-	Unit            string
-	Boost           healthbox.BoostInfo
-	lastDiscovery   time.Time
-	lastValue       time.Time
-	lastBoostUpdate time.Time
+	HealthboxRoomId           int
+	Name                      string
+	SensorUniqueId            string
+	SwitchUniqueId            string
+	Identifiers               string
+	State                     string
+	Unit                      string
+	Boost                     healthbox.BoostInfo
+	lastDiscoveryPublished    time.Time
+	lastAvailabilityPublished time.Time
+	lastValue                 time.Time
+	lastBoostUpdate           time.Time
 }
 
 func (g *Gw) StartGateway(ctx context.Context, healthboxClient *healthbox.Client, mqttClient *homeassistant.Client) {
@@ -62,8 +63,8 @@ func (g *Gw) Start() {
 	fmt.Println("starting gateway")
 	g.ctx, g.cancel = context.WithCancel(context.Background())
 	g.StartDataUpdate(g.ctx)
-	g.resetDiscoveryInterval()
 	g.StartDiscoveryPublishing(g.ctx)
+	g.StartAvailabilityPublishing(g.ctx)
 	g.running = true
 }
 
@@ -98,9 +99,10 @@ func (d *HaDevice) PublishSwitchState() {
 
 func (d *HaDevice) PublishAvailability() {
 	available := "0"
-	if time.Since(d.lastValue) < 60*time.Second {
+	if time.Since(d.lastValue) < 120*time.Second {
 		available = "1"
 	}
+	d.lastAvailabilityPublished = time.Now()
 	ha.Publish(d.GetSensorAvailabilityTopic(), available)
 	ha.Publish(d.GetSwitchAvailabilityTopic(), available)
 }
@@ -130,7 +132,7 @@ func (d *HaDevice) PublishFlowSensorDiscovery() {
 
 	//fmt.Printf("publishing discovery data for device %s: %s %+v", d.Name, topic, string(payload))
 	ha.Publish(fmt.Sprintf("homeassistant/sensor/%s/%s/config", "healthbox", d.SensorUniqueId), payload)
-	d.lastDiscovery = time.Now()
+	d.lastDiscoveryPublished = time.Now()
 }
 
 func (d *HaDevice) PublishBoostSwitchDiscovery() {
@@ -160,7 +162,7 @@ func (d *HaDevice) PublishBoostSwitchDiscovery() {
 	}
 
 	ha.Publish(fmt.Sprintf("homeassistant/switch/%s/%s/config", "healthbox", d.SwitchUniqueId), payload)
-	d.lastDiscovery = time.Now()
+	d.lastDiscoveryPublished = time.Now()
 }
 
 func (g *Gw) String() string {
@@ -212,15 +214,15 @@ func newHaDevice(room healthbox.RoomInfo) *HaDevice {
 	state := fmt.Sprintf("%.1f", room.Actuator[0].Parameter.FlowRate.Value)
 
 	device := HaDevice{
-		HealthboxRoomId: room.Id,
-		Name:            room.Name,
-		SensorUniqueId:  getUniqueSensorId(room),
-		SwitchUniqueId:  getUniqueSwitchId(room),
-		Identifiers:     "healthbox",
-		State:           state,
-		Unit:            room.Actuator[0].Parameter.FlowRate.Unit,
-		lastValue:       time.Now(),
-		lastDiscovery:   time.Now(),
+		HealthboxRoomId:        room.Id,
+		Name:                   room.Name,
+		SensorUniqueId:         getUniqueSensorId(room),
+		SwitchUniqueId:         getUniqueSwitchId(room),
+		Identifiers:            "healthbox",
+		State:                  state,
+		Unit:                   room.Actuator[0].Parameter.FlowRate.Unit,
+		lastValue:              time.Now(),
+		lastDiscoveryPublished: time.Now(),
 	}
 	device.PublishFlowSensorDiscovery()
 	device.PublishBoostSwitchDiscovery()
@@ -261,22 +263,29 @@ func (g *Gw) StartDataUpdate(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			default:
-				time.Sleep(time.Second * 15)
+				time.Sleep(time.Second * 60)
 			}
 		}
 	}()
 }
 func (g *Gw) resetDiscoveryInterval() {
 	for _, device := range g.devices {
-		device.lastDiscovery = time.Time{}
+		device.lastDiscoveryPublished = time.Time{}
 	}
 }
 
 func (g *Gw) StartDiscoveryPublishing(ctx context.Context) {
+	g.resetDiscoveryInterval()
+
 	go func() {
+		for _, device := range g.devices {
+			device.PublishFlowSensorDiscovery()
+			device.PublishBoostSwitchDiscovery()
+		}
+
 		for {
 			for _, device := range g.devices {
-				if time.Since(device.lastDiscovery) > 3600*time.Second {
+				if time.Since(device.lastDiscoveryPublished) > 3600*time.Second {
 					device.PublishFlowSensorDiscovery()
 					device.PublishBoostSwitchDiscovery()
 				}
@@ -286,7 +295,24 @@ func (g *Gw) StartDiscoveryPublishing(ctx context.Context) {
 				fmt.Printf("discovery publishing task exiting")
 				return
 			default:
-				time.Sleep(time.Second * 15)
+				time.Sleep(time.Second * 1)
+			}
+		}
+	}()
+}
+
+func (g *Gw) StartAvailabilityPublishing(ctx context.Context) {
+	go func() {
+		for {
+			for _, device := range g.devices {
+				device.PublishAvailability()
+			}
+			select {
+			case <-ctx.Done():
+				fmt.Printf("availability publishing task exiting")
+				return
+			default:
+				time.Sleep(time.Second * 1)
 			}
 		}
 	}()
