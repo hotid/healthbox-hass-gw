@@ -275,6 +275,7 @@ func (g *Gw) resetDiscoveryInterval() {
 }
 
 func (g *Gw) StartDiscoveryPublishing(ctx context.Context) {
+	fmt.Printf("discovery publishing task started\n")
 	g.resetDiscoveryInterval()
 
 	go func() {
@@ -292,7 +293,7 @@ func (g *Gw) StartDiscoveryPublishing(ctx context.Context) {
 			}
 			select {
 			case <-ctx.Done():
-				fmt.Printf("discovery publishing task exiting")
+				fmt.Printf("discovery publishing task exiting\n")
 				return
 			default:
 				time.Sleep(time.Second * 1)
@@ -302,6 +303,7 @@ func (g *Gw) StartDiscoveryPublishing(ctx context.Context) {
 }
 
 func (g *Gw) StartAvailabilityPublishing(ctx context.Context) {
+	fmt.Printf("availability publishing task started\n")
 	go func() {
 		for {
 			for _, device := range g.devices {
@@ -309,7 +311,7 @@ func (g *Gw) StartAvailabilityPublishing(ctx context.Context) {
 			}
 			select {
 			case <-ctx.Done():
-				fmt.Printf("availability publishing task exiting")
+				fmt.Printf("availability publishing task exiting\n")
 				return
 			default:
 				time.Sleep(time.Second * 1)
